@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # AI 点餐助手（命令行版）
-# 运行前先安装依赖:  pip install openai
+# 运行前先安装依赖:  pip install openai pymysql
 # 运行前先设置密钥:  $env:DEEPSEEK_API_KEY = "sk-你的key"
 import json
 import os
@@ -21,7 +21,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "search_menu",
-            "description": "在餐厅菜单里搜索菜品，可以按菜名关键词、口味、最高价格筛选",
+            "description": "在餐厅菜单里搜索菜品，可以按菜名关键词、类别、最高价格筛选",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -29,9 +29,9 @@ TOOLS = [
                         "type": "string",
                         "description": "菜名关键词，例如：鱼、蛋糕、千层。没有就留空",
                     },
-                    "taste": {
+                    "category": {
                         "type": "string",
-                        "description": "口味，可选值：辣、不辣、甜。没有要求就留空",
+                        "description": "菜品类别，例如：肉类、海鲜类、蔬菜类、主食、甜食、饮料、水果。没有要求就留空",
                     },
                     "max_price": {
                         "type": "number",
@@ -50,7 +50,9 @@ SYSTEM_PROMPT = (
     "1. 涉及菜品信息的问题（有什么菜、多少钱、推荐等），必须先调用 search_menu 工具查询，"
     "不要凭空编造菜品。\n"
     "2. 根据查询结果如实回答，推荐菜品时说明理由。\n"
-    "3. 回答用中文，语气亲切简短。"
+    "3. 菜单数据库里没有辣度/口味字段。顾客问辣不辣时，可以凭菜名常识推断"
+    "（如宫保鸡丁、辣椒炒肉通常偏辣），并说明这是根据菜名推断的。\n"
+    "4. 回答用中文，语气亲切简短。"
 )
 
 
@@ -92,7 +94,7 @@ def ask_ai(messages):
 def main():
     print("=" * 40)
     print(" 欢迎光临！我是 AI 点餐助手「小餐」")
-    print(" 试试问我：有什么不辣的菜？ / 推荐几个甜点")
+    print(" 试试问我：有什么主食？ / 10 块钱能吃什么？ / 有没有辣的菜？")
     print(" 输入 exit 退出")
     print("=" * 40)
 

@@ -58,7 +58,7 @@ def ask_ai(messages):
     """一轮对话：让 AI 回答问题，如果 AI 要调用工具，就执行工具再把结果喂回去"""
     # 第一次请求：AI 决定是直接回答，还是调用工具
     resp = client.chat.completions.create(
-        model="deepseek-chat",
+        model="deepseek-v4-flash",
         messages=messages,
         tools=TOOLS,
     )
@@ -81,7 +81,7 @@ def ask_ai(messages):
             )
 
         # 第二次请求：AI 拿到工具结果，组织出最终回答
-        resp2 = client.chat.completions.create(model="deepseek-chat", messages=messages)
+        resp2 = client.chat.completions.create(model="deepseek-v4-flash", messages=messages)
         final = resp2.choices[0].message
         messages.append(final.model_dump())
         return final.content

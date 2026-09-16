@@ -1,0 +1,10 @@
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 虚拟环境
+venv/
+.venv/
+
+# 密钥文件（绝对不能上传到 GitHub！）
+.env

@@ -143,8 +143,8 @@ async function send() {
       addBubble("出错了：" + (data.error || "未知错误"), "error");
       return;
     }
-    for (const call of data.tool_calls || []) {
-      addBubble("正在查询菜单 " + call.name + "(" + JSON.stringify(call.args) + ")", "tool");
+    if (data.tool_calls && data.tool_calls.length) {
+      addBubble("emmmm思考中.....", "tool");
     }
     addBubble(data.answer, "ai");
   } catch (e) {

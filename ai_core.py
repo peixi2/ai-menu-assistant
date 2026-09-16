@@ -54,25 +54,29 @@ SYSTEM_PROMPT = (
 )
 
 
-def ask_ai(messages):
-    """一轮对话：让 AI 回答问题。如果 AI 要调用工具，就执行工具再把结果喂回去。
+def ask_ai(messages, max_rounds=3):
+    """一轮对话：让 AI 回答问题。AI 想调用工具就执行、把结果喂回去，直到它给出最终回答。
+
+    每一轮请求都必须带 tools 参数——否则 AI 想再次调工具时，
+    会把调用请求以文本形式（<calls> 那种）吐在回答里。
 
     返回 (最终回答, 工具调用记录)。工具调用记录形如
     [{"name": "search_menu", "args": {"category": "主食"}}]，方便两个界面各自展示。
     """
     trace = []
 
-    # 第一次请求：AI 决定是直接回答，还是调用工具
-    resp = client.chat.completions.create(
-        model="deepseek-v4-flash",
-        messages=messages,
-        tools=TOOLS,
-    )
-    msg = resp.choices[0].message
-    messages.append(msg.model_dump())  # 把 AI 的回复记入历史
+    for _ in range(max_rounds):
+        resp = client.chat.completions.create(
+            model="deepseek-v4-flash",
+            messages=messages,
+            tools=TOOLS,
+        )
+        msg = resp.choices[0].message
+        messages.append(msg.model_dump())  # 把 AI 的回复记入历史
 
-    # 如果 AI 想调用工具
-    if msg.tool_calls:
+        if not msg.tool_calls:
+            return msg.content, trace  # AI 不再调工具，这就是最终回答
+
         for call in msg.tool_calls:
             args = json.loads(call.function.arguments)  # AI 给出的参数
             trace.append({"name": call.function.name, "args": args})
@@ -86,10 +90,12 @@ def ask_ai(messages):
                 }
             )
 
-        # 第二次请求：AI 拿到工具结果，组织出最终回答
-        resp2 = client.chat.completions.create(model="deepseek-v4-flash", messages=messages)
-        final = resp2.choices[0].message
-        messages.append(final.model_dump())
-        return final.content, trace
-
-    return msg.content, trace
+    # 来回太多次还在调工具（正常不会发生）：直接让它根据已有信息回答
+    resp = client.chat.completions.create(
+        model="deepseek-v4-flash",
+        messages=messages,
+        tools=TOOLS,
+    )
+    final = resp.choices[0].message
+    messages.append(final.model_dump())
+    return final.content, trace

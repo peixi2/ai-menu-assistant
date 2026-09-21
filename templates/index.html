@@ -192,20 +192,23 @@
   function prevNotice() { currentIndex = (currentIndex - 1 + totalNotices) % totalNotices; showNotice(currentIndex); }
   if (totalNotices > 0) setInterval(nextNotice, 6000);
 
-  // 前端搜索过滤（和 Java 版一致：按菜名和描述过滤当前页）
+  // 前端搜索过滤：按字匹配，菜名或描述里包含每个字才算命中
+  // （比如搜"鸡肉"能匹配"白切鸡（肉类）"，搜单个"鸡"也一样工作）
   function filterFood() {
-    const filter = document.getElementById('searchInput').value.trim().toLowerCase();
+    const raw = document.getElementById('searchInput').value.trim().toLowerCase();
+    const chars = [...raw];
     const cards = document.querySelectorAll('.food-card');
     const clearBtn = document.getElementById('clearSearchBtn');
     const noResultMsg = document.getElementById('noResultMsg');
-    clearBtn.style.display = filter.length > 0 ? 'inline' : 'none';
-    if (!filter.length && noResultMsg) noResultMsg.style.display = 'none';
+    clearBtn.style.display = chars.length > 0 ? 'inline' : 'none';
+    if (!chars.length && noResultMsg) noResultMsg.style.display = 'none';
 
     let anyVisible = false;
     cards.forEach(card => {
       const name = card.querySelector('h3').textContent.toLowerCase();
       const desc = card.querySelector('.food-desc').textContent.toLowerCase();
-      if (name.includes(filter) || desc.includes(filter)) {
+      const haystack = name + " " + desc;
+      if (chars.every(c => haystack.includes(c))) {
         card.classList.remove('hidden');
         anyVisible = true;
       } else {
@@ -213,7 +216,7 @@
       }
     });
     if (noResultMsg) {
-      noResultMsg.style.display = (filter.length > 0 && !anyVisible) ? 'block' : 'none';
+      noResultMsg.style.display = (chars.length > 0 && !anyVisible) ? 'block' : 'none';
     }
   }
   function clearSearch() {

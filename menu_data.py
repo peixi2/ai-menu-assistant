@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 # 第三步：从模拟数据换成查真实 MySQL（menu_system 库，就是你 Menu-实训 项目用的那个）
+import os
+
 import pymysql
 
-# 连接信息和 Menu-实训 的 c3p0-config.xml 保持一致
+# 连接信息默认和 Menu-实训 的 c3p0-config.xml 保持一致，
+# 别人的电脑可以通过环境变量 DB_HOST / DB_USER / DB_PASSWORD 等覆盖（见 README）
 DB_CONFIG = {
-    "host": "localhost",
-    "port": 3306,
-    "user": "root",
-    "password": "123456",
-    "database": "menu_system",
+    "host": os.environ.get("DB_HOST", "localhost"),
+    "port": int(os.environ.get("DB_PORT", "3306")),
+    "user": os.environ.get("DB_USER", "root"),
+    "password": os.environ.get("DB_PASSWORD", "123456"),
+    "database": os.environ.get("DB_NAME", "menu_system"),
     "charset": "utf8mb4",
 }
 

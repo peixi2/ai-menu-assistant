@@ -10,8 +10,8 @@ from ai_core import SYSTEM_PROMPT, ask_ai
 
 app = Flask(__name__)
 
-# 菜品图片在 Menu-实训 项目的 webapp/image 里，这里只读不改那边任何文件
-IMG_DIR = r"D:\Web\Menu-实训\src\main\webapp\image"
+# 菜品图片存在项目自己的 static/img 里（从 Menu-实训 复制过来的），换电脑也能用
+IMG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "img")
 
 # 每个浏览器页面一段对话历史（存在内存里，重启服务就清空）
 SESSIONS = {}

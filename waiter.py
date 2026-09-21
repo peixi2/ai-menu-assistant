@@ -25,7 +25,7 @@ def main():
 
         messages.append({"role": "user", "content": user_input})
         try:
-            answer, tool_calls = ask_ai(messages)
+            answer, tool_calls, _ = ask_ai(messages)  # 第三个返回值是查到的菜品，命令行版用不上
             for call in tool_calls:
                 print(f"   [工具调用] {call['name']}({call['args']})")
             print(f"\n小餐: {answer}")

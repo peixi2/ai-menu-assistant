@@ -25,7 +25,7 @@ def _query(sql, params=None):
 
 def search_menu(keyword: str = None, category: str = None, max_price: float = None):
     """按条件查真实菜单。这就是 AI 可以调用的“工具函数”。"""
-    sql = "SELECT name, description, price FROM food WHERE status = 1"
+    sql = "SELECT name, description, price, image FROM food WHERE status = 1"
     conds, params = [], []
     if keyword:
         conds.append("name LIKE %s")
@@ -43,7 +43,12 @@ def search_menu(keyword: str = None, category: str = None, max_price: float = No
     rows = _query(sql, params)
     # 真实表里类别存在 description 字段，price 是 Decimal，转成 float 方便 AI 读
     return [
-        {"name": r["name"], "category": r["description"], "price": float(r["price"])}
+        {
+            "name": r["name"],
+            "category": r["description"],
+            "price": float(r["price"]),
+            "image": r["image"],
+        }
         for r in rows
     ]
 

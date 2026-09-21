@@ -2,11 +2,16 @@
 # AI 点餐助手（网页版）
 # 运行前先设置密钥:  $env:DEEPSEEK_API_KEY = "sk-你的key"
 # 启动:  python app.py  →  浏览器打开 http://127.0.0.1:5000
-from flask import Flask, jsonify, render_template, request
+import os
+
+from flask import Flask, jsonify, render_template, request, send_from_directory
 
 from ai_core import SYSTEM_PROMPT, ask_ai
 
 app = Flask(__name__)
+
+# 菜品图片在 Menu-实训 项目的 webapp/image 里，这里只读不改那边任何文件
+IMG_DIR = r"D:\Web\Menu-实训\src\main\webapp\image"
 
 # 每个浏览器页面一段对话历史（存在内存里，重启服务就清空）
 SESSIONS = {}
@@ -15,6 +20,12 @@ SESSIONS = {}
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/img/<path:filename>")
+def dish_image(filename):
+    """按文件名返回菜品图片（数据库里存的是 image/菜名.jpg 这种相对路径）。"""
+    return send_from_directory(IMG_DIR, filename)
 
 
 @app.route("/chat", methods=["POST"])
@@ -28,11 +39,11 @@ def chat():
     messages = SESSIONS.setdefault(sid, [{"role": "system", "content": SYSTEM_PROMPT}])
     messages.append({"role": "user", "content": user_text})
     try:
-        answer, tool_calls = ask_ai(messages)
+        answer, tool_calls, dishes = ask_ai(messages)
     except Exception as e:
         messages.pop()  # 失败的那句用户话移出历史
         return jsonify({"error": str(e)}), 500
-    return jsonify({"answer": answer, "tool_calls": tool_calls})
+    return jsonify({"answer": answer, "tool_calls": tool_calls, "dishes": dishes})
 
 
 if __name__ == "__main__":

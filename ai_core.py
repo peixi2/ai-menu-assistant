@@ -60,10 +60,12 @@ def ask_ai(messages, max_rounds=3):
     每一轮请求都必须带 tools 参数——否则 AI 想再次调工具时，
     会把调用请求以文本形式（<calls> 那种）吐在回答里。
 
-    返回 (最终回答, 工具调用记录)。工具调用记录形如
-    [{"name": "search_menu", "args": {"category": "主食"}}]，方便两个界面各自展示。
+    返回 (最终回答, 工具调用记录, 本轮查到的菜品)。
+    工具调用记录形如 [{"name": "search_menu", "args": {"category": "主食"}}]，
+    菜品列表是各次工具执行结果合并起来的，网页版用它来配图。
     """
     trace = []
+    dishes = []
 
     for _ in range(max_rounds):
         resp = client.chat.completions.create(
@@ -75,12 +77,13 @@ def ask_ai(messages, max_rounds=3):
         messages.append(msg.model_dump())  # 把 AI 的回复记入历史
 
         if not msg.tool_calls:
-            return msg.content, trace  # AI 不再调工具，这就是最终回答
+            return msg.content, trace, dishes  # AI 不再调工具，这就是最终回答
 
         for call in msg.tool_calls:
             args = json.loads(call.function.arguments)  # AI 给出的参数
             trace.append({"name": call.function.name, "args": args})
             result = search_menu(**args)  # 真正执行工具
+            dishes.extend(result)
             # 把工具的执行结果告诉 AI
             messages.append(
                 {
@@ -98,4 +101,4 @@ def ask_ai(messages, max_rounds=3):
     )
     final = resp.choices[0].message
     messages.append(final.model_dump())
-    return final.content, trace
+    return final.content, trace, dishes

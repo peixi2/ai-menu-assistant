@@ -49,9 +49,9 @@
   <form class="form-card" method="post">
     <h2>登录</h2>
     <p class="sub">欢迎回来，小餐等你～</p>
-    {% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
+    {% if msg or request.args.get('registered') %}<p class="msg">{{ msg or '注册成功，请登录' }}</p>{% endif %}
     {% if error %}<p class="err">{{ error }}</p>{% endif %}
-    <input type="text" name="username" placeholder="用户名" value="{{ username or '' }}" required>
+    <input type="text" name="username" placeholder="用户名" value="{{ username or request.args.get('username') or '' }}" required>
     <input type="password" name="password" placeholder="密码" required>
     <button type="submit">登 录</button>
     <p class="switch">还没有账号？<a href="{{ url_for('register') }}">去注册</a></p>

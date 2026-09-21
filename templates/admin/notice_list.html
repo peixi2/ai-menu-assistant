@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}公告管理 - AI 点餐助手「小餐」{% endblock %}
+{% block content %}
+<style>
+  .admin-wrap { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+  .admin-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .admin-head h2 { color: #9a3412; }
+  .btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #f97316;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .btn:hover { background: #ea580c; }
+  .btn.small { padding: 4px 10px; font-size: 13px; }
+  .btn.gray { background: #94a3b8; }
+  .btn.gray:hover { background: #64748b; }
+  .btn.red { background: #dc2626; }
+  .btn.red:hover { background: #b91c1c; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #fde68a; font-size: 14px; text-align: left; }
+  th { background: #fff7ed; color: #9a3412; }
+  td.content { color: #666; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .back { color: #9a3412; font-size: 14px; text-decoration: none; margin-right: 12px; }
+  .back:hover { text-decoration: underline; }
+</style>
+<div class="admin-wrap">
+  <div class="admin-head">
+    <h2>公告管理</h2>
+    <div>
+      <a class="back" href="{{ url_for('admin_main') }}">← 返回后台主页</a>
+      <a class="btn" href="{{ url_for('admin_notice_add') }}">新增公告</a>
+    </div>
+  </div>
+  <table>
+    <tr><th>ID</th><th>标题</th><th>内容</th><th>操作</th></tr>
+    {% for notice in notices %}
+    <tr>
+      <td>{{ notice.id }}</td>
+      <td>{{ notice.title }}</td>
+      <td class="content" title="{{ notice.content }}">{{ notice.content }}</td>
+      <td>
+        <a class="btn small gray" href="{{ url_for('admin_notice_edit', notice_id=notice.id) }}">编辑</a>
+        <form method="post" action="{{ url_for('admin_notice_delete', notice_id=notice.id) }}" style="display:inline"
+              onsubmit="return confirm('确定删除公告「{{ notice.title }}」吗？');">
+          <button class="btn small red" type="submit">删除</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

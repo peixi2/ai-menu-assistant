@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{% if food %}编辑菜品{% else %}新增菜品{% endif %} - AI 点餐助手「小餐」{% endblock %}
+{% block content %}
+<style>
+  .admin-wrap { max-width: 480px; margin: 40px auto; padding: 0 20px; }
+  .admin-wrap h2 { color: #9a3412; margin-bottom: 20px; }
+  .form-card {
+    background: #fff;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+  .form-card label { display: block; font-size: 14px; color: #666; margin: 12px 0 4px; }
+  .form-card input, .form-card select, .form-card textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+  }
+  .form-card input:focus, .form-card select:focus { border-color: #f97316; }
+  .form-card img.preview { margin-top: 8px; width: 100px; height: 100px; object-fit: cover; border-radius: 8px; display: none; }
+  .form-actions { margin-top: 20px; display: flex; gap: 10px; }
+  .btn {
+    flex: 1;
+    padding: 10px;
+    background: #f97316;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+  }
+  .btn:hover { background: #ea580c; }
+  .btn.gray { background: #94a3b8; }
+  .btn.gray:hover { background: #64748b; }
+</style>
+<div class="admin-wrap">
+  <h2>{% if food %}编辑菜品 #{{ food.id }}{% else %}新增菜品{% endif %}</h2>
+  <form class="form-card" method="post">
+    <label>菜名</label>
+    <input type="text" name="name" value="{{ food.name if food else '' }}" required>
+
+    <label>图片（来自 static/img）</label>
+    <select name="image" id="imageSelect" onchange="preview()">
+      {% for img in images %}
+        <option value="image/{{ img }}" {% if food and food.image == 'image/' ~ img %}selected{% endif %}>image/{{ img }}</option>
+      {% endfor %}
+    </select>
+    <img class="preview" id="previewImg" alt="预览">
+
+    <label>价格（元）</label>
+    <input type="number" name="price" step="0.1" min="0"
+           value="{{ food.price if food else '' }}" required>
+
+    <label>类别（多个用 | 分隔）</label>
+    <input type="text" name="description" value="{{ food.description if food else '' }}">
+
+    <label>状态</label>
+    <select name="status">
+      <option value="1" {% if food and food.status == 1 %}selected{% endif %}>上架</option>
+      <option value="0" {% if food and food.status == 0 %}selected{% endif %}>下架</option>
+    </select>
+
+    <div class="form-actions">
+      <button class="btn" type="submit">保存</button>
+      <a class="btn gray" href="{{ url_for('admin_foods') }}">取消</a>
+    </div>
+  </form>
+</div>
+<script>
+  function preview() {
+    const sel = document.getElementById("imageSelect");
+    const img = document.getElementById("previewImg");
+    img.src = "/img/" + encodeURIComponent(sel.value.split("/").pop());
+    img.style.display = "block";
+  }
+  preview();
+</script>
+{% endblock %}

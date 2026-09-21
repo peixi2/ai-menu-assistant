@@ -1,7 +1,7 @@
 -- AI 点餐助手项目用到的表：food（菜品）、notice（公告）、user（用户）
 -- 导入方式: mysql -uroot -p menu_system < sql/food.sql
 -- （需要先建好 menu_system 库：CREATE DATABASE menu_system DEFAULT CHARSET utf8mb4;）
--- 注意：user 表只建结构不含数据，注册功能可自行注册新账号
+-- 注意：user 表只带一个演示管理员 admin/admin123，其他账号请用注册页注册
 
 SET NAMES utf8mb4;
 DROP TABLE IF EXISTS food;
@@ -90,3 +90,6 @@ INSERT INTO notice (title, content) VALUES ('emmmm', 'today.....');
 INSERT INTO notice (title, content) VALUES ('吐槽', 'i do not like meat');
 INSERT INTO notice (title, content) VALUES ('提问', '双皮奶好吃吗？？');
 INSERT INTO notice (title, content) VALUES ('你今天想吃什么', '........');
+
+-- 演示管理员账号（密码明文仅用于教学演示，真实项目请用哈希存储）
+INSERT INTO user (username, password, role) VALUES ('admin', 'admin123', 1);

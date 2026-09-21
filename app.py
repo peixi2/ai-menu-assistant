@@ -17,7 +17,22 @@ from flask import (
 )
 
 from ai_core import SYSTEM_PROMPT, ask_ai
-from menu_data import create_user, find_user, get_foods_page, get_notices
+from menu_data import (
+    add_food,
+    add_notice,
+    create_user,
+    delete_food,
+    delete_notice,
+    find_user,
+    get_all_foods,
+    get_food,
+    get_foods_page,
+    get_notices,
+    list_users,
+    update_food,
+    update_notice,
+    update_user_role,
+)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "ai-menu-assistant-dev-key")
@@ -27,6 +42,23 @@ IMG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "im
 
 # 每个浏览器一段 AI 对话历史（存在内存里，重启服务就清空）
 SESSIONS = {}
+
+# 不用登录就能访问的路径（和 Java 版 LoginFilter 一致：只有登录/注册放行）
+FREE_PATHS = ("/login", "/register", "/static", "/img")
+
+
+@app.before_request
+def require_login():
+    path = request.path
+    if any(path == p or path.startswith(p + "/") for p in FREE_PATHS):
+        return None
+    if "user_id" not in session:
+        if path == "/chat":
+            return jsonify({"error": "请先登录"}), 401
+        return redirect(url_for("login"))
+    if path.startswith("/admin") and session.get("role") != 1:
+        return redirect(url_for("index"))
+    return None
 
 
 @app.route("/")
@@ -55,6 +87,9 @@ def login():
             session["user_id"] = user["id"]
             session["username"] = user["username"]
             session["role"] = user["role"]
+            # 管理员进后台，普通用户进首页（和 Java 版一致）
+            if user["role"] == 1:
+                return redirect(url_for("admin_main"))
             return redirect(url_for("index"))
         return render_template("login.html", error="用户名或密码错误", username=username)
     return render_template("login.html")
@@ -72,15 +107,119 @@ def register():
                 "register.html", error="注册失败，用户名可能已存在"
             )
         create_user(username, password)
-        return render_template("login.html", msg="注册成功，请登录")
+        # 用重定向而不是直接渲染：防止刷新页面时重复提交注册表单
+        return redirect(url_for("login", registered=1, username=username))
     return render_template("register.html")
 
 
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("index"))
+    return redirect(url_for("login"))
 
+
+# ---------- 管理员后台 ----------
+
+@app.route("/admin")
+def admin_main():
+    return render_template(
+        "admin/main.html",
+        food_count=len(get_all_foods()),
+        notice_count=len(get_notices()),
+        user_count=len(list_users()),
+    )
+
+
+@app.route("/admin/foods")
+def admin_foods():
+    return render_template("admin/food_list.html", foods=get_all_foods())
+
+
+def _food_form(food=None):
+    images = sorted(os.listdir(IMG_DIR))
+    return render_template("admin/food_form.html", food=food, images=images)
+
+
+@app.route("/admin/foods/add", methods=["GET", "POST"])
+def admin_food_add():
+    if request.method == "POST":
+        add_food(
+            request.form["name"],
+            request.form["image"],
+            float(request.form["price"]),
+            request.form["description"],
+            int(request.form["status"]),
+        )
+        return redirect(url_for("admin_foods"))
+    return _food_form()
+
+
+@app.route("/admin/foods/edit/<int:food_id>", methods=["GET", "POST"])
+def admin_food_edit(food_id):
+    food = get_food(food_id)
+    if food is None:
+        return redirect(url_for("admin_foods"))
+    if request.method == "POST":
+        update_food(
+            food_id,
+            request.form["name"],
+            request.form["image"],
+            float(request.form["price"]),
+            request.form["description"],
+            int(request.form["status"]),
+        )
+        return redirect(url_for("admin_foods"))
+    return _food_form(food)
+
+
+@app.route("/admin/foods/delete/<int:food_id>", methods=["POST"])
+def admin_food_delete(food_id):
+    delete_food(food_id)
+    return redirect(url_for("admin_foods"))
+
+
+@app.route("/admin/notices")
+def admin_notices():
+    return render_template("admin/notice_list.html", notices=get_notices())
+
+
+@app.route("/admin/notices/add", methods=["GET", "POST"])
+def admin_notice_add():
+    if request.method == "POST":
+        add_notice(request.form["title"], request.form["content"])
+        return redirect(url_for("admin_notices"))
+    return render_template("admin/notice_form.html")
+
+
+@app.route("/admin/notices/edit/<int:notice_id>", methods=["GET", "POST"])
+def admin_notice_edit(notice_id):
+    notices = [n for n in get_notices() if n["id"] == notice_id]
+    if not notices:
+        return redirect(url_for("admin_notices"))
+    if request.method == "POST":
+        update_notice(notice_id, request.form["title"], request.form["content"])
+        return redirect(url_for("admin_notices"))
+    return render_template("admin/notice_form.html", notice=notices[0])
+
+
+@app.route("/admin/notices/delete/<int:notice_id>", methods=["POST"])
+def admin_notice_delete(notice_id):
+    delete_notice(notice_id)
+    return redirect(url_for("admin_notices"))
+
+
+@app.route("/admin/users")
+def admin_users():
+    return render_template("admin/user_list.html", users=list_users())
+
+
+@app.route("/admin/users/role/<int:user_id>", methods=["POST"])
+def admin_user_role(user_id):
+    update_user_role(user_id, int(request.form["role"]))
+    return redirect(url_for("admin_users"))
+
+
+# ---------- 其他 ----------
 
 @app.route("/img/<path:filename>")
 def dish_image(filename):

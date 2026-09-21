@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{% if notice %}编辑公告{% else %}新增公告{% endif %} - AI 点餐助手「小餐」{% endblock %}
+{% block content %}
+<style>
+  .admin-wrap { max-width: 560px; margin: 40px auto; padding: 0 20px; }
+  .admin-wrap h2 { color: #9a3412; margin-bottom: 20px; }
+  .form-card {
+    background: #fff;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+  .form-card label { display: block; font-size: 14px; color: #666; margin: 12px 0 4px; }
+  .form-card input, .form-card textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    font-family: inherit;
+  }
+  .form-card textarea { height: 120px; resize: vertical; }
+  .form-card input:focus, .form-card textarea:focus { border-color: #f97316; }
+  .form-actions { margin-top: 20px; display: flex; gap: 10px; }
+  .btn {
+    flex: 1;
+    padding: 10px;
+    background: #f97316;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+  }
+  .btn:hover { background: #ea580c; }
+  .btn.gray { background: #94a3b8; }
+  .btn.gray:hover { background: #64748b; }
+</style>
+<div class="admin-wrap">
+  <h2>{% if notice %}编辑公告 #{{ notice.id }}{% else %}新增公告{% endif %}</h2>
+  <form class="form-card" method="post">
+    <label>标题</label>
+    <input type="text" name="title" value="{{ notice.title if notice else '' }}" required>
+    <label>内容</label>
+    <textarea name="content">{{ notice.content if notice else '' }}</textarea>
+    <div class="form-actions">
+      <button class="btn" type="submit">保存</button>
+      <a class="btn gray" href="{{ url_for('admin_notices') }}">取消</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

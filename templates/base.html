@@ -175,6 +175,9 @@
   <div class="nav">
     <a href="{{ url_for('index') }}">首页</a>
     {% if session.get('username') %}
+      {% if session.get('role') == 1 %}
+        <a href="{{ url_for('admin_main') }}">后台管理</a>
+      {% endif %}
       <a href="#">欢迎，{{ session['username'] }}</a>
       <a href="{{ url_for('logout') }}">退出登录</a>
     {% else %}

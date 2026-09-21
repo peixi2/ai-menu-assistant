@@ -19,9 +19,11 @@
 
 ## 功能
 
-- 首页菜品展示：卡片网格（图/名/价/描述），前端搜索过滤 + 分页（每页 12 条）
+- **登录门禁**：未登录只能访问登录/注册页，其他页面自动跳转登录（和 Java 版 LoginFilter 一致）
+- 首页菜品展示：卡片网格（图/名/价/描述），前端搜索过滤（按字模糊匹配）+ 分页（每页 12 条）
 - 公告轮播：读 notice 表，6 秒自动切换
-- 登录 / 注册 / 退出：和 Menu-实训 Java 项目共用同一张 user 表
+- 登录 / 注册 / 退出：和 Menu-实训 Java 项目共用同一张 user 表；管理员登录进后台，普通用户进首页
+- **后台管理**（管理员）：菜品增删改、公告增删改、用户列表 + 修改角色
 - AI 悬浮聊天窗：任何页面右下角点开即聊，按菜名关键词 / 类别 / 最高价格查菜单，推荐菜品并说明理由
 - AI 查到菜后展示图片卡片（图片失败自动隐藏）
 - 同一浏览器内对话有记忆（localStorage 存会话 id）
@@ -48,7 +50,7 @@ mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS menu_system DEFAULT CHARSET ut
 mysql -uroot -p menu_system < sql/food.sql
 ```
 
-> 脚本里的 user 表只建结构不含数据（不公开真实账号），首次使用请用注册页注册新账号。
+> 脚本里的 user 表带一个演示管理员：`admin` / `admin123`。普通账号请用注册页注册，想体验后台管理就用管理员登录。
 
 如果 MySQL 的用户名/密码不是 `root/123456`，用环境变量覆盖：
 
@@ -93,14 +95,15 @@ python waiter.py
 | 文件 | 作用 |
 |------|------|
 | `ai_core.py` | AI 核心逻辑：工具声明、多轮工具调用循环（命令行和网页共用） |
-| `menu_data.py` | 数据库层：`search_menu` 工具函数 + 分页查菜品 + 公告 + 用户 |
+| `menu_data.py` | 数据库层：`search_menu` 工具函数 + 分页查菜品 + 公告 + 用户 + 后台增删改 |
 | `waiter.py` | 命令行版入口 |
-| `app.py` | Flask 网页版入口（端口 5000）：首页、登录注册、聊天 API、图片路由 |
+| `app.py` | Flask 网页版入口（端口 5000）：登录拦截、首页、登录注册、后台管理、聊天 API、图片路由 |
 | `templates/base.html` | 公共布局：顶部导航 + 悬浮 AI 聊天窗（所有页面共用） |
 | `templates/index.html` | 首页：公告轮播 + 菜品展示 + 搜索 + 分页 |
 | `templates/login.html` `templates/register.html` | 登录 / 注册页 |
+| `templates/admin/` | 后台管理页面：主页、菜品管理、公告管理、用户管理 |
 | `static/img/` | 菜品图片（51 张） |
-| `sql/food.sql` | 菜单表结构和数据 |
+| `sql/food.sql` | 表结构 + 菜品/公告数据 + 演示管理员账号 |
 
 ## 已知限制
 

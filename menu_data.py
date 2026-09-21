@@ -79,7 +79,9 @@ def get_foods_page(page=1, page_size=12):
 
 def get_notices():
     """公告轮播：全部公告按时间倒序。"""
-    return _query("SELECT title, content FROM notice ORDER BY create_time DESC")
+    return _query(
+        "SELECT id, title, content FROM notice ORDER BY create_time DESC, id DESC"
+    )
 
 
 def find_user(username):
@@ -103,6 +105,75 @@ def create_user(username, password):
         conn.commit()
     finally:
         conn.close()
+
+
+# ---------- 以下为管理员后台用 ----------
+
+def _execute(sql, params=None):
+    """执行增删改语句。"""
+    conn = pymysql.connect(**DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, params or ())
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_all_foods():
+    """后台菜品管理：查全部菜品（含下架的）。"""
+    return _query(
+        "SELECT id, name, image, price, description, status FROM food ORDER BY id"
+    )
+
+
+def get_food(food_id):
+    rows = _query(
+        "SELECT id, name, image, price, description, status FROM food WHERE id = %s",
+        (food_id,),
+    )
+    return rows[0] if rows else None
+
+
+def add_food(name, image, price, description, status):
+    _execute(
+        "INSERT INTO food(name, image, price, description, status) VALUES(%s, %s, %s, %s, %s)",
+        (name, image, price, description, status),
+    )
+
+
+def update_food(food_id, name, image, price, description, status):
+    _execute(
+        "UPDATE food SET name=%s, image=%s, price=%s, description=%s, status=%s WHERE id=%s",
+        (name, image, price, description, status, food_id),
+    )
+
+
+def delete_food(food_id):
+    _execute("DELETE FROM food WHERE id = %s", (food_id,))
+
+
+def add_notice(title, content):
+    _execute("INSERT INTO notice(title, content) VALUES(%s, %s)", (title, content))
+
+
+def update_notice(notice_id, title, content):
+    _execute(
+        "UPDATE notice SET title=%s, content=%s WHERE id=%s",
+        (title, content, notice_id),
+    )
+
+
+def delete_notice(notice_id):
+    _execute("DELETE FROM notice WHERE id = %s", (notice_id,))
+
+
+def list_users():
+    return _query("SELECT id, username, role FROM user ORDER BY id")
+
+
+def update_user_role(user_id, role):
+    _execute("UPDATE user SET role=%s WHERE id=%s", (role, user_id))
 
 
 if __name__ == "__main__":

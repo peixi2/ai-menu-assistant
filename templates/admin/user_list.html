@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}用户管理 - AI 点餐助手「小餐」{% endblock %}
+{% block content %}
+<style>
+  .admin-wrap { max-width: 700px; margin: 30px auto; padding: 0 20px; }
+  .admin-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .admin-head h2 { color: #9a3412; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #fde68a; font-size: 14px; text-align: left; }
+  th { background: #fff7ed; color: #9a3412; }
+  select {
+    padding: 4px 8px;
+    border: 1px solid #fcd34d;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+  }
+  .btn {
+    padding: 4px 10px;
+    background: #f97316;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .btn:hover { background: #ea580c; }
+  .tag { font-size: 12px; padding: 2px 8px; border-radius: 10px; }
+  .tag.admin { background: #fef3c7; color: #b45309; }
+  .tag.user { background: #e0f2fe; color: #0369a1; }
+  .back { color: #9a3412; font-size: 14px; text-decoration: none; }
+  .back:hover { text-decoration: underline; }
+</style>
+<div class="admin-wrap">
+  <div class="admin-head">
+    <h2>用户管理</h2>
+    <a class="back" href="{{ url_for('admin_main') }}">← 返回后台主页</a>
+  </div>
+  <table>
+    <tr><th>ID</th><th>用户名</th><th>当前角色</th><th>修改角色</th></tr>
+    {% for user in users %}
+    <tr>
+      <td>{{ user.id }}</td>
+      <td>{{ user.username }}</td>
+      <td>
+        {% if user.role == 1 %}<span class="tag admin">管理员</span>{% else %}<span class="tag user">普通用户</span>{% endif %}
+      </td>
+      <td>
+        <form method="post" action="{{ url_for('admin_user_role', user_id=user.id) }}" style="display:flex; gap:6px; align-items:center;">
+          <select name="role">
+            <option value="1" {% if user.role == 1 %}selected{% endif %}>管理员</option>
+            <option value="2" {% if user.role == 2 %}selected{% endif %}>普通用户</option>
+          </select>
+          <button class="btn" type="submit">保存</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

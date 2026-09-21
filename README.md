@@ -42,6 +42,8 @@
 pip install -r requirements.txt
 ```
 
+> Windows 用户也可以跳过这一步：直接双击项目里的 `start.bat`，会自动创建虚拟环境、安装依赖并启动网页版（数据库和 API Key 仍需按下面步骤准备）。
+
 ### 3. 准备数据库
 
 先建库，再导入表结构和数据（`sql/food.sql` 包含 food 菜品表 + 51 道菜、notice 公告表、user 用户表结构）：

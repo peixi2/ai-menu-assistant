@@ -53,7 +53,7 @@ def require_login():
     if any(path == p or path.startswith(p + "/") for p in FREE_PATHS):
         return None
     if "user_id" not in session:
-        if path == "/chat":
+        if path in ("/chat", "/message"):
             return jsonify({"error": "请先登录"}), 401
         return redirect(url_for("login"))
     if path.startswith("/admin") and session.get("role") != 1:
@@ -220,6 +220,20 @@ def admin_user_role(user_id):
 
 
 # ---------- 其他 ----------
+
+@app.route("/message", methods=["POST"])
+def message():
+    """留言板：用户留言写入 notice 表，参与公告轮播，管理员在公告管理里管理。"""
+    data = request.get_json(silent=True) or {}
+    content = (data.get("content") or "").strip()
+    if not content:
+        return jsonify({"error": "留言不能为空"}), 400
+    if len(content) > 200:
+        return jsonify({"error": "留言最多 200 字"}), 400
+    title = f"{session.get('username', '匿名')} 的留言"
+    add_notice(title=title, content=content)
+    return jsonify({"ok": True, "title": title, "content": content})
+
 
 @app.route("/img/<path:filename>")
 def dish_image(filename):

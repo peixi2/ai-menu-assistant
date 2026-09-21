@@ -29,6 +29,67 @@
   .notice-arrow.left { left: 24px; }
   .notice-arrow.right { right: 24px; }
 
+  /* 留言板按钮（公告区左下角） */
+  .msg-btn {
+    position: absolute;
+    left: 16px;
+    bottom: 10px;
+    padding: 6px 14px;
+    background: #f97316;
+    color: #fff;
+    border: none;
+    border-radius: 16px;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(249,115,22,.35);
+  }
+  .msg-btn:hover { background: #ea580c; }
+
+  /* 留言弹窗 */
+  .modal-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal {
+    background: #fff;
+    border-radius: 14px;
+    width: 420px;
+    max-width: 90vw;
+    padding: 24px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.2);
+  }
+  .modal h3 { color: #9a3412; margin-bottom: 4px; }
+  .modal .hint { color: #999; font-size: 13px; margin-bottom: 14px; }
+  .modal textarea {
+    width: 100%;
+    height: 120px;
+    padding: 10px 12px;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+  }
+  .modal textarea:focus { border-color: #f97316; }
+  .modal-actions { margin-top: 14px; display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-actions button {
+    padding: 8px 20px;
+    border-radius: 18px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+  }
+  .modal-actions .cancel { background: #f1f5f9; color: #64748b; }
+  .modal-actions .submit { background: #f97316; color: #fff; }
+  .modal-actions .submit:hover { background: #ea580c; }
+  .modal-actions .submit:disabled { background: #fdba74; cursor: not-allowed; }
+
   /* 菜品区 */
   .food-section { padding: 20px 30px; max-width: 1100px; margin: 0 auto; }
   .search-box {
@@ -127,6 +188,20 @@
   {% else %}
     <p style="color:#999;">暂无公告</p>
   {% endif %}
+  <button class="msg-btn" onclick="openMsg()">✍ 留言板</button>
+</div>
+
+<!-- 留言弹窗 -->
+<div class="modal-mask" id="msgMask">
+  <div class="modal">
+    <h3>写留言</h3>
+    <p class="hint">留言会显示在上方公告轮播里，管理员可在后台管理</p>
+    <textarea id="msgText" maxlength="200" placeholder="说点什么吧，比如：双皮奶好吃吗？"></textarea>
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeMsg()">取消</button>
+      <button class="submit" id="msgSubmit" onclick="submitMsg()">提交</button>
+    </div>
+  </div>
 </div>
 
 <!-- 菜品展示区 -->
@@ -177,20 +252,81 @@
 </div>
 
 <script>
-  // 公告轮播（6 秒自动切换）
+  // 公告轮播（6 秒自动切换；每次动态查询，新留言插入后也能轮播）
   let currentIndex = 0;
-  const notices = document.querySelectorAll('.notice-item');
-  const totalNotices = notices.length;
-
+  function getNotices() { return document.querySelectorAll('.notice-item'); }
   function showNotice(index) {
-    notices.forEach((item, i) => {
-      item.classList.remove('active');
-      if (i === index) item.classList.add('active');
-    });
+    const items = getNotices();
+    items.forEach((item, i) => item.classList.toggle('active', i === index));
   }
-  function nextNotice() { currentIndex = (currentIndex + 1) % totalNotices; showNotice(currentIndex); }
-  function prevNotice() { currentIndex = (currentIndex - 1 + totalNotices) % totalNotices; showNotice(currentIndex); }
-  if (totalNotices > 0) setInterval(nextNotice, 6000);
+  function nextNotice() {
+    const n = getNotices().length;
+    if (!n) return;
+    currentIndex = (currentIndex + 1) % n;
+    showNotice(currentIndex);
+  }
+  function prevNotice() {
+    const n = getNotices().length;
+    if (!n) return;
+    currentIndex = (currentIndex - 1 + n) % n;
+    showNotice(currentIndex);
+  }
+  if (getNotices().length > 0) setInterval(nextNotice, 6000);
+
+  // 留言板
+  function openMsg() {
+    document.getElementById("msgMask").style.display = "flex";
+    document.getElementById("msgText").focus();
+  }
+  function closeMsg() {
+    document.getElementById("msgMask").style.display = "none";
+    document.getElementById("msgText").value = "";
+  }
+  async function submitMsg() {
+    const text = document.getElementById("msgText").value.trim();
+    const btn = document.getElementById("msgSubmit");
+    if (!text || btn.disabled) return;
+    btn.disabled = true;
+    try {
+      const resp = await fetch("/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        alert("出错了：" + (data.error || "未知错误"));
+        return;
+      }
+      closeMsg();
+      addNotice(data.title, data.content);
+    } catch (e) {
+      alert("网络出错了：" + e);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  // 把新留言插到轮播最前面并立即展示
+  function addNotice(title, content) {
+    let slider = document.getElementById("noticeSlider");
+    if (!slider) {
+      location.reload();  // 本来一条公告都没有的情况，直接刷新页面
+      return;
+    }
+    const item = document.createElement("div");
+    item.className = "notice-item";
+    const t = document.createElement("div");
+    t.className = "notice-title";
+    t.textContent = title;
+    const c = document.createElement("div");
+    c.className = "notice-content";
+    c.textContent = content;
+    item.appendChild(t);
+    item.appendChild(c);
+    slider.insertBefore(item, slider.firstChild);
+    currentIndex = 0;
+    showNotice(0);
+  }
 
   // 前端搜索过滤：按字匹配，菜名或描述里包含每个字才算命中
   // （比如搜"鸡肉"能匹配"白切鸡（肉类）"，搜单个"鸡"也一样工作）

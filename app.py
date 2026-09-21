@@ -67,9 +67,11 @@ def index():
     page_size = 12
     foods, total = get_foods_page(page, page_size)
     total_page = max(1, math.ceil(total / page_size))
+    all_foods, _ = get_foods_page(1, 9999)  # 搜索框全局过滤用，不分页
     return render_template(
         "index.html",
         foods=foods,
+        all_foods=all_foods,
         notices=get_notices(),
         page=page,
         total_page=total_page,

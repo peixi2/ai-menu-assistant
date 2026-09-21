@@ -252,6 +252,14 @@
 </div>
 
 <script>
+  // 全局模糊搜索：后端把全部上架菜品一次性放进页面，搜索时过滤所有菜品（不受分页限制）
+  const ALL_FOODS = {{ all_foods|tojson }};
+  const foodGrid = document.getElementById('foodGrid');
+  const pagination = document.querySelector('.pagination');
+  const emptyMsg = document.querySelector('.empty-msg');
+  const originalGridHTML = foodGrid ? foodGrid.innerHTML : '';
+  const originalPaginationDisplay = pagination ? pagination.style.display : '';
+
   // 公告轮播（6 秒自动切换；每次动态查询，新留言插入后也能轮播）
   let currentIndex = 0;
   function getNotices() { return document.querySelectorAll('.notice-item'); }
@@ -328,32 +336,55 @@
     showNotice(0);
   }
 
-  // 前端搜索过滤：按字匹配，菜名或描述里包含每个字才算命中
-  // （比如搜"鸡肉"能匹配"白切鸡（肉类）"，搜单个"鸡"也一样工作）
+  // 全局模糊搜索：在全部菜品里按字匹配（菜名 + 类别都参与），每个字都命中才算
+  // （搜"鸡肉"能匹配"白切鸡"，搜单个"鸡"也一样；不在当前页的菜也能搜到）
+  function buildFoodCard(food) {
+    const card = document.createElement('div');
+    card.className = 'food-card';
+    const img = document.createElement('img');
+    img.src = '/img/' + encodeURIComponent(String(food.image || '').split('/').pop());
+    img.alt = food.name;
+    img.loading = 'lazy';
+    const h3 = document.createElement('h3');
+    h3.textContent = food.name;
+    const price = document.createElement('div');
+    price.className = 'food-price';
+    price.textContent = '¥' + food.price;
+    const desc = document.createElement('p');
+    desc.className = 'food-desc';
+    desc.textContent = food.category;
+    card.append(img, h3, price, desc);
+    return card;
+  }
+
   function filterFood() {
     const raw = document.getElementById('searchInput').value.trim().toLowerCase();
     const chars = [...raw];
-    const cards = document.querySelectorAll('.food-card');
     const clearBtn = document.getElementById('clearSearchBtn');
     const noResultMsg = document.getElementById('noResultMsg');
     clearBtn.style.display = chars.length > 0 ? 'inline' : 'none';
-    if (!chars.length && noResultMsg) noResultMsg.style.display = 'none';
 
-    let anyVisible = false;
-    cards.forEach(card => {
-      const name = card.querySelector('h3').textContent.toLowerCase();
-      const desc = card.querySelector('.food-desc').textContent.toLowerCase();
-      const haystack = name + " " + desc;
-      if (chars.every(c => haystack.includes(c))) {
-        card.classList.remove('hidden');
-        anyVisible = true;
-      } else {
-        card.classList.add('hidden');
-      }
-    });
-    if (noResultMsg) {
-      noResultMsg.style.display = (chars.length > 0 && !anyVisible) ? 'block' : 'none';
+    if (!chars.length) {
+      // 清空搜索：恢复原来的分页视图
+      if (foodGrid) foodGrid.innerHTML = originalGridHTML;
+      if (pagination) pagination.style.display = originalPaginationDisplay;
+      if (emptyMsg) emptyMsg.style.display = '';
+      if (noResultMsg) noResultMsg.style.display = 'none';
+      return;
     }
+
+    const matched = ALL_FOODS.filter(f => {
+      const haystack = ((f.name || '') + ' ' + (f.category || '')).toLowerCase();
+      return chars.every(c => haystack.includes(c));
+    });
+
+    if (pagination) pagination.style.display = 'none';
+    if (emptyMsg) emptyMsg.style.display = 'none';
+    if (foodGrid) {
+      foodGrid.innerHTML = '';
+      matched.forEach(f => foodGrid.appendChild(buildFoodCard(f)));
+    }
+    if (noResultMsg) noResultMsg.style.display = matched.length ? 'none' : 'block';
   }
   function clearSearch() {
     document.getElementById('searchInput').value = '';

@@ -1,7 +1,7 @@
--- menu_system.food 表结构和数据（AI 点餐助手项目用）
--- 导出时间: 2026-09-21，共 51 行
+-- AI 点餐助手项目用到的表：food（菜品）、notice（公告）、user（用户）
 -- 导入方式: mysql -uroot -p menu_system < sql/food.sql
 -- （需要先建好 menu_system 库：CREATE DATABASE menu_system DEFAULT CHARSET utf8mb4;）
+-- 注意：user 表只建结构不含数据，注册功能可自行注册新账号
 
 SET NAMES utf8mb4;
 DROP TABLE IF EXISTS food;
@@ -14,6 +14,23 @@ CREATE TABLE `food` (
   `status` int DEFAULT '1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+DROP TABLE IF EXISTS notice;
+CREATE TABLE `notice` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
+  `content` text,
+  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+DROP TABLE IF EXISTS user;
+CREATE TABLE `user` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(50) NOT NULL,
+  `role` int DEFAULT '2',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO food (id, name, image, price, description, status) VALUES (5, '白切鸡', 'image/白切鸡.jpg', 28.8, '肉类', 1);
 INSERT INTO food (id, name, image, price, description, status) VALUES (6, '煲仔饭', 'image/煲仔饭.jpg', 16.0, '主食', 1);
@@ -66,3 +83,10 @@ INSERT INTO food (id, name, image, price, description, status) VALUES (52, '水�
 INSERT INTO food (id, name, image, price, description, status) VALUES (53, '西瓜', 'image/西瓜.jpg', 20.0, '水果', 1);
 INSERT INTO food (id, name, image, price, description, status) VALUES (54, '苹果', 'image/苹果.jpg', 6.0, '水果', 1);
 INSERT INTO food (id, name, image, price, description, status) VALUES (55, '水果盘', 'image/水果盘.jpg', 26.0, '水果', 1);
+
+INSERT INTO notice (title, content) VALUES ('今日份上新', '白切鸡');
+INSERT INTO notice (title, content) VALUES ('NOTICE', 'Now，everything is OK!');
+INSERT INTO notice (title, content) VALUES ('emmmm', 'today.....');
+INSERT INTO notice (title, content) VALUES ('吐槽', 'i do not like meat');
+INSERT INTO notice (title, content) VALUES ('提问', '双皮奶好吃吗？？');
+INSERT INTO notice (title, content) VALUES ('你今天想吃什么', '........');

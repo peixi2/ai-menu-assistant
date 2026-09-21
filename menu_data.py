@@ -56,6 +56,55 @@ def search_menu(keyword: str = None, category: str = None, max_price: float = No
     ]
 
 
+def get_foods_page(page=1, page_size=12):
+    """首页菜品展示用：分页查上架菜品。返回 (菜品列表, 总数)。"""
+    total = _query("SELECT COUNT(*) AS c FROM food WHERE status = 1")[0]["c"]
+    offset = (page - 1) * page_size
+    rows = _query(
+        "SELECT name, description, price, image FROM food WHERE status = 1"
+        " ORDER BY id LIMIT %s, %s",
+        (offset, page_size),
+    )
+    foods = [
+        {
+            "name": r["name"],
+            "category": r["description"],
+            "price": float(r["price"]),
+            "image": r["image"],
+        }
+        for r in rows
+    ]
+    return foods, total
+
+
+def get_notices():
+    """公告轮播：全部公告按时间倒序。"""
+    return _query("SELECT title, content FROM notice ORDER BY create_time DESC")
+
+
+def find_user(username):
+    """登录用：按用户名查用户。"""
+    rows = _query(
+        "SELECT id, username, password, role FROM user WHERE username = %s",
+        (username,),
+    )
+    return rows[0] if rows else None
+
+
+def create_user(username, password):
+    """注册：新增普通用户（role=2），和 Java 版逻辑一致。"""
+    conn = pymysql.connect(**DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO user(username, password, role) VALUES(%s, %s, 2)",
+                (username, password),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 if __name__ == "__main__":
     # 自己先试试这个函数能不能用
     print("全部上架菜品数量：", len(search_menu()))

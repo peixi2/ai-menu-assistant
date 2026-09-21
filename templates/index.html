@@ -1,228 +1,224 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 点餐助手「小餐」</title>
+{% extends "base.html" %}
+{% block title %}菜品展示 - AI 点餐助手「小餐」{% endblock %}
+{% block content %}
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
-    background: linear-gradient(160deg, #fff7ed, #fef3c7);
-    height: 100vh;
+  /* 公告轮播区 */
+  .notice-section {
+    height: 150px;
+    background: #fff9e6;
+    border-bottom: 2px solid #e0c88a;
     display: flex;
-    flex-direction: column;
     align-items: center;
-  }
-  .chat-box {
-    width: 100%;
-    max-width: 720px;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-  header {
-    padding: 12px 18px;
-    background: #f97316;
-    color: #fff;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,.15);
-  }
-  header small { font-weight: normal; font-size: 12px; opacity: .9; }
-  #messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .bubble {
-    max-width: 80%;
-    padding: 10px 14px;
-    border-radius: 14px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-size: 15px;
-  }
-  .bubble.user {
-    align-self: flex-end;
-    background: #f97316;
-    color: #fff;
-    border-bottom-right-radius: 4px;
-  }
-  .bubble.ai {
-    align-self: flex-start;
-    background: #fff;
-    color: #333;
-    border: 1px solid #fde68a;
-    border-bottom-left-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
-  }
-  .bubble.tool {
-    align-self: center;
-    background: #f1f5f9;
-    color: #64748b;
-    font-size: 12px;
-    border-radius: 10px;
-    padding: 6px 12px;
-  }
-  .bubble.error { align-self: center; background: #fee2e2; color: #b91c1c; font-size: 13px; }
-  .bubble.wait { align-self: flex-start; background: #fff; color: #999; }
-  .dish-wall {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding: 4px 2px 8px;
-  }
-  .dish-card {
-    flex: 0 0 auto;
-    width: 120px;
-    background: #fff;
-    border: 1px solid #fde68a;
-    border-radius: 12px;
+    justify-content: center;
+    position: relative;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
   }
-  .dish-card img { width: 100%; height: 90px; object-fit: cover; display: block; }
-  .dish-info { padding: 6px 8px; }
-  .dish-name {
-    font-size: 13px;
-    color: #333;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .notice-slider { width: 70%; text-align: center; }
+  .notice-item { display: none; animation: fadeEffect 0.5s; }
+  .notice-item.active { display: block; }
+  @keyframes fadeEffect { from { opacity: 0.4; } to { opacity: 1; } }
+  .notice-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #9a3412; }
+  .notice-content { font-size: 15px; color: #555; }
+  .notice-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(0,0,0,0.25); color: white; border: none;
+    padding: 8px 12px; cursor: pointer; font-size: 18px;
+    border-radius: 50%; transition: background 0.3s;
   }
-  .dish-price { font-size: 12px; color: #f97316; font-weight: bold; }
-  .input-bar {
+  .notice-arrow:hover { background: rgba(0,0,0,0.5); }
+  .notice-arrow.left { left: 24px; }
+  .notice-arrow.right { right: 24px; }
+
+  /* 菜品区 */
+  .food-section { padding: 20px 30px; max-width: 1100px; margin: 0 auto; }
+  .search-box {
     display: flex;
-    gap: 8px;
-    padding: 12px;
-    background: #fff;
-    border-top: 1px solid #fde68a;
+    justify-content: flex-end;
+    margin-bottom: 16px;
   }
-  #input {
-    flex: 1;
-    padding: 10px 14px;
-    border: 1px solid #fcd34d;
+  .search-box .search-inner {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: white;
     border-radius: 20px;
-    font-size: 15px;
-    outline: none;
+    padding: 4px 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   }
-  #input:focus { border-color: #f97316; }
-  #send {
-    padding: 10px 22px;
-    background: #f97316;
-    color: #fff;
+  .search-box input {
+    padding: 8px 0;
     border: none;
-    border-radius: 20px;
-    font-size: 15px;
-    cursor: pointer;
+    outline: none;
+    width: 180px;
+    font-size: 14px;
+    background: transparent;
   }
-  #send:disabled { background: #fdba74; cursor: not-allowed; }
+  .clear-search-btn {
+    cursor: pointer; font-size: 18px; color: #999;
+    display: none; user-select: none;
+  }
+  .clear-search-btn:hover { color: #333; }
+  .food-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+  }
+  .food-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    width: 220px;
+    text-align: center;
+    padding: 15px;
+    transition: transform 0.2s;
+  }
+  .food-card:hover { transform: translateY(-3px); }
+  .food-card img {
+    width: 180px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+  .food-card h3 { margin: 10px 0 5px; font-size: 18px; color: #333; }
+  .food-price { color: #f97316; font-weight: bold; font-size: 16px; }
+  .food-desc { color: #777; font-size: 14px; margin: 5px 0; }
+  .food-card.hidden { display: none; }
+  .empty-msg { text-align: center; color: #999; margin-top: 50px; font-size: 16px; }
+  .no-result-msg {
+    text-align: center; color: #999; margin-top: 30px; font-size: 16px;
+    display: none;
+  }
+
+  /* 分页 */
+  .pagination { text-align: center; margin: 24px 0; font-size: 14px; }
+  .pagination a, .pagination span {
+    display: inline-block;
+    padding: 6px 12px;
+    border: 1px solid #fdba74;
+    text-decoration: none;
+    color: #9a3412;
+    margin: 0 3px;
+    border-radius: 4px;
+    background: #fff;
+  }
+  .pagination span.current {
+    background: #f97316;
+    color: white;
+    font-weight: bold;
+    border-color: #f97316;
+  }
+  .pagination .info { border: none; background: none; color: #999; }
 </style>
-</head>
-<body>
-<div class="chat-box">
-  <header>AI 点餐助手「小餐」<br><small>问问我菜单上有什么好吃的～</small></header>
-  <div id="messages"></div>
-  <div class="input-bar">
-    <input id="input" placeholder="比如：有什么主食？" autocomplete="off">
-    <button id="send">发送</button>
-  </div>
+
+<!-- 公告轮播区 -->
+<div class="notice-section">
+  {% if notices %}
+    <button class="notice-arrow left" onclick="prevNotice()">&#10094;</button>
+    <div class="notice-slider" id="noticeSlider">
+      {% for notice in notices %}
+        <div class="notice-item{% if loop.first %} active{% endif %}">
+          <div class="notice-title">{{ notice.title }}</div>
+          <div class="notice-content">{{ notice.content }}</div>
+        </div>
+      {% endfor %}
+    </div>
+    <button class="notice-arrow right" onclick="nextNotice()">&#10095;</button>
+  {% else %}
+    <p style="color:#999;">暂无公告</p>
+  {% endif %}
 </div>
+
+<!-- 菜品展示区 -->
+<div class="food-section">
+  <div class="search-box">
+    <div class="search-inner">
+      <input type="text" id="searchInput" placeholder="搜索菜品..." oninput="filterFood()">
+      <span id="clearSearchBtn" class="clear-search-btn" onclick="clearSearch()">✕</span>
+    </div>
+  </div>
+
+  {% if foods %}
+    <div class="food-grid" id="foodGrid">
+      {% for food in foods %}
+        <div class="food-card">
+          <img src="{{ url_for('dish_image', filename=food.image.split('/')[-1]) }}" alt="{{ food.name }}" loading="lazy">
+          <h3>{{ food.name }}</h3>
+          <div class="food-price">¥{{ food.price }}</div>
+          <p class="food-desc">{{ food.category }}</p>
+        </div>
+      {% endfor %}
+    </div>
+    <div id="noResultMsg" class="no-result-msg">暂无此商品</div>
+
+    {% if total_page > 1 %}
+      <div class="pagination">
+        {% if page > 1 %}
+          <a href="{{ url_for('index', page=1) }}">首页</a>
+          <a href="{{ url_for('index', page=page-1) }}">上一页</a>
+        {% endif %}
+        {% for i in range(1, total_page + 1) %}
+          {% if i == page %}
+            <span class="current">{{ i }}</span>
+          {% else %}
+            <a href="{{ url_for('index', page=i) }}">{{ i }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page < total_page %}
+          <a href="{{ url_for('index', page=page+1) }}">下一页</a>
+          <a href="{{ url_for('index', page=total_page) }}">尾页</a>
+        {% endif %}
+        <span class="info">共 {{ total }} 条</span>
+      </div>
+    {% endif %}
+  {% else %}
+    <p class="empty-msg">暂时没有菜品，请稍后再来。</p>
+  {% endif %}
+</div>
+
 <script>
-const sessionId = (crypto.randomUUID && crypto.randomUUID()) || Math.random().toString(36).slice(2);
-const box = document.getElementById("messages");
-const input = document.getElementById("input");
-const sendBtn = document.getElementById("send");
+  // 公告轮播（6 秒自动切换）
+  let currentIndex = 0;
+  const notices = document.querySelectorAll('.notice-item');
+  const totalNotices = notices.length;
 
-function addBubble(text, cls) {
-  const div = document.createElement("div");
-  div.className = "bubble " + cls;
-  div.textContent = text;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-  return div;
-}
-
-// AI 调工具查到的菜品，展示成图片卡片墙
-function addDishWall(dishes) {
-  const wall = document.createElement("div");
-  wall.className = "dish-wall";
-  const seen = new Set();
-  for (const d of dishes) {
-    if (!d.image || seen.has(d.name)) continue;  // 按菜名去重
-    seen.add(d.name);
-    const card = document.createElement("div");
-    card.className = "dish-card";
-    const img = document.createElement("img");
-    img.src = "/img/" + encodeURIComponent(d.image.split("/").pop());
-    img.alt = d.name;
-    img.loading = "lazy";
-    img.onerror = () => card.remove();  // 图片加载失败就整张卡片不显示
-    const info = document.createElement("div");
-    info.className = "dish-info";
-    const name = document.createElement("div");
-    name.className = "dish-name";
-    name.textContent = d.name;
-    name.title = d.category + " · " + d.name;
-    const price = document.createElement("div");
-    price.className = "dish-price";
-    price.textContent = "¥" + parseFloat(d.price);
-    info.appendChild(name);
-    info.appendChild(price);
-    card.appendChild(img);
-    card.appendChild(info);
-    wall.appendChild(card);
-  }
-  if (wall.children.length) {
-    box.appendChild(wall);
-    box.scrollTop = box.scrollHeight;
-  }
-}
-
-async function send() {
-  const text = input.value.trim();
-  if (!text || sendBtn.disabled) return;
-  input.value = "";
-  addBubble(text, "user");
-  sendBtn.disabled = true;
-  const wait = addBubble("小餐正在想…", "wait");
-  try {
-    const resp = await fetch("/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId, message: text }),
+  function showNotice(index) {
+    notices.forEach((item, i) => {
+      item.classList.remove('active');
+      if (i === index) item.classList.add('active');
     });
-    const data = await resp.json();
-    wait.remove();
-    if (!resp.ok) {
-      addBubble("出错了：" + (data.error || "未知错误"), "error");
-      return;
-    }
-    if (data.tool_calls && data.tool_calls.length) {
-      addBubble("emmmm思考中.....", "tool");
-    }
-    if (data.dishes && data.dishes.length) {
-      addDishWall(data.dishes);
-    }
-    addBubble(data.answer, "ai");
-  } catch (e) {
-    wait.remove();
-    addBubble("网络出错了：" + e, "error");
-  } finally {
-    sendBtn.disabled = false;
-    input.focus();
   }
-}
+  function nextNotice() { currentIndex = (currentIndex + 1) % totalNotices; showNotice(currentIndex); }
+  function prevNotice() { currentIndex = (currentIndex - 1 + totalNotices) % totalNotices; showNotice(currentIndex); }
+  if (totalNotices > 0) setInterval(nextNotice, 6000);
 
-sendBtn.addEventListener("click", send);
-input.addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
-input.focus();
+  // 前端搜索过滤（和 Java 版一致：按菜名和描述过滤当前页）
+  function filterFood() {
+    const filter = document.getElementById('searchInput').value.trim().toLowerCase();
+    const cards = document.querySelectorAll('.food-card');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    const noResultMsg = document.getElementById('noResultMsg');
+    clearBtn.style.display = filter.length > 0 ? 'inline' : 'none';
+    if (!filter.length && noResultMsg) noResultMsg.style.display = 'none';
+
+    let anyVisible = false;
+    cards.forEach(card => {
+      const name = card.querySelector('h3').textContent.toLowerCase();
+      const desc = card.querySelector('.food-desc').textContent.toLowerCase();
+      if (name.includes(filter) || desc.includes(filter)) {
+        card.classList.remove('hidden');
+        anyVisible = true;
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+    if (noResultMsg) {
+      noResultMsg.style.display = (filter.length > 0 && !anyVisible) ? 'block' : 'none';
+    }
+  }
+  function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    filterFood();
+  }
 </script>
-</body>
-</html>
+{% endblock %}

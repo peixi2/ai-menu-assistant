@@ -2,9 +2,9 @@
 
 一个用来学习 **Function Calling（函数调用）** 的 AI 点餐助手项目：接 DeepSeek 大模型 + 真实 MySQL 菜单库，让 AI 自己决定什么时候查菜单、用什么条件查，再根据查询结果回答顾客。
 
-提供两个界面：
+提供两种界面：
 
-- **网页版**：浏览器里的聊天界面，AI 查到菜后还会展示菜品图片卡片
+- **网页版**：完整餐厅网站——首页菜品展示（搜索/分页）+ 公告轮播 + 登录注册，右下角悬浮 AI 聊天窗随时可问，AI 查到菜后展示图片卡片
 - **命令行版**：终端里直接聊
 
 ## 核心原理：Function Calling
@@ -19,10 +19,12 @@
 
 ## 功能
 
-- 按菜名关键词 / 类别 / 最高价格查菜单
-- AI 推荐菜品并说明理由
-- 网页版展示查到菜品的图片卡片（图片失败自动隐藏）
-- 同一浏览器会话内对话有记忆
+- 首页菜品展示：卡片网格（图/名/价/描述），前端搜索过滤 + 分页（每页 12 条）
+- 公告轮播：读 notice 表，6 秒自动切换
+- 登录 / 注册 / 退出：和 Menu-实训 Java 项目共用同一张 user 表
+- AI 悬浮聊天窗：任何页面右下角点开即聊，按菜名关键词 / 类别 / 最高价格查菜单，推荐菜品并说明理由
+- AI 查到菜后展示图片卡片（图片失败自动隐藏）
+- 同一浏览器内对话有记忆（localStorage 存会话 id）
 
 ## 快速开始
 
@@ -39,12 +41,14 @@ pip install -r requirements.txt
 
 ### 3. 准备数据库
 
-先建库，再导入菜单数据（表结构和 51 道菜都在 `sql/food.sql` 里）：
+先建库，再导入表结构和数据（`sql/food.sql` 包含 food 菜品表 + 51 道菜、notice 公告表、user 用户表结构）：
 
 ```powershell
 mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS menu_system DEFAULT CHARSET utf8mb4;"
 mysql -uroot -p menu_system < sql/food.sql
 ```
+
+> 脚本里的 user 表只建结构不含数据（不公开真实账号），首次使用请用注册页注册新账号。
 
 如果 MySQL 的用户名/密码不是 `root/123456`，用环境变量覆盖：
 
@@ -88,11 +92,13 @@ python waiter.py
 
 | 文件 | 作用 |
 |------|------|
-| `ai_core.py` | AI 核心逻辑：工具声明、多轮工具调用循环（两个界面共用） |
-| `menu_data.py` | `search_menu` 工具函数，查 MySQL 菜单库 |
+| `ai_core.py` | AI 核心逻辑：工具声明、多轮工具调用循环（命令行和网页共用） |
+| `menu_data.py` | 数据库层：`search_menu` 工具函数 + 分页查菜品 + 公告 + 用户 |
 | `waiter.py` | 命令行版入口 |
-| `app.py` | Flask 网页版入口（端口 5000） |
-| `templates/index.html` | 网页版聊天界面 |
+| `app.py` | Flask 网页版入口（端口 5000）：首页、登录注册、聊天 API、图片路由 |
+| `templates/base.html` | 公共布局：顶部导航 + 悬浮 AI 聊天窗（所有页面共用） |
+| `templates/index.html` | 首页：公告轮播 + 菜品展示 + 搜索 + 分页 |
+| `templates/login.html` `templates/register.html` | 登录 / 注册页 |
 | `static/img/` | 菜品图片（51 张） |
 | `sql/food.sql` | 菜单表结构和数据 |
 
@@ -100,3 +106,4 @@ python waiter.py
 
 - 对话历史存在内存里，重启服务就清空
 - AI 模型名在 `ai_core.py` 里写的是 `deepseek-v4-flash`，可按需修改
+- 用户密码为明文存储（与 Menu-实训 Java 项目共用 user 表、保持一致；真实项目应改为哈希存储）
